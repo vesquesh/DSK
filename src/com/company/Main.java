@@ -66,8 +66,6 @@ public class Main {
             System.out.println("MACIERZ OPTYMALNA:");
             wypiszTablice(num, zredukowany);
 
-            //if(sprawdzWystarczajacyAlfa(zredukowany,m))System.out.println("System jest optymalny");
-
 
         } catch (Exception e){
             e.printStackTrace();
