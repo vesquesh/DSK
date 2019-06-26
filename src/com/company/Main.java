@@ -46,75 +46,98 @@ public class Main {
                 System.exit(0);
             }
 
-            if(!sprawdzDiagnozowalnosc(num,graf,m)){
+            if(!sprawdzDiagnozowalnosc(graf,m)){
                 System.out.println("Warunek konieczny nie spelniony. System nie jest "+m+"-diagnozowalny!");
                 System.exit(0);
             }
-            else {
-                System.out.println("Warunek konieczny spelniony. System jest "+m+"-diagnozowalny!");
-            }
+            else if(!sprawdzWystarczajacy(graf,m)) {
+                System.out.println("Warunek wystarczający nie spelniony. System nie jest "+m+"-diagnozowalny!");
+                System.exit(0);
+            } else System.out.println("Waruneki spelnione. System jest "+m+"-diagnozowalny!");
             System.out.print("\n");
 
-            //PRZED REDUKCJA
             System.out.println("MACIERZ WEJŚCIOWA:");
             wypiszTablice(num,graf);
-
             zredukowany = redukuj(graf,m);
 
-            //PO REDUKCJI
-            System.out.println("");
-            System.out.println("MACIERZ OPTYMALNA:");
+            System.out.println("\nMACIERZ OPTYMALNA:");
             wypiszTablice(num, zredukowany);
-
-
         } catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    //METODA SŁUŻY DO USUWANIA NADMIAROWYCH POŁACZEN MIEDZY WEZLAMI
     public static int[][] redukuj(int[][] graf, int m){
         List<Integer> indeksy = new ArrayList<>();
+        int max_j=-1;
+        int k;
+        boolean petla;
+        boolean stop=diagonKoniec(graf, m);
 
-        //ZEBRANIE DANYCH O WSZYSTKICH ISTNIEJĄCYCH POŁACZENIACH
-        for(int j=0;j<graf.length;j++){
-            for(int i=0;i<graf[j].length;i++){
-                if(i==j)continue;
-                if(graf[i][j]==1){
-                    indeksy.add(i);  /// Zapamiętanie wszystkich pozycji z 1 w wierszu
+        while(stop){
+            max_j=indeksMax(graf, max_j);
+            k=0;
+            petla=true;
+            while(petla){
+                //if(max_j==0)return graf;
+                if(graf[max_j][k]==1){
+                    if(sprawdzDiagon(graf,m,k)) {
+                        if(max_j==k)continue;
+                        graf[max_j][k]=0;
+                        indeksy.add(k);
+                        petla=false;
+                    }
+                    else k=k+1;
                 }
-
-                graf[i][j]=0;
-                if(!(sprawdzDiagnozowalnosc(graf.length,graf,m))) {
-                    graf[i][j]=1;   /// Usuwanie nadmiarowych połączeń
-                }
+                else k=k+1;
+                if(k>7)petla=false;
             }
-
-           if(!sprawdzWystarczajacy(graf,m)){
+            if(!sprawdzWystarczajacy(graf,m)){
                 for(Integer index : indeksy){
-                    graf[index][j]=1;     /// Jeśli warunek wystarczający niespełniony, to wycofaj wszystkie zmiany dla danego wiersza
+                    graf[max_j][index]=1;
                 }
-                indeksy.clear();          /// Wyczyść pamięć =
+                indeksy.clear();
             }
-
+            stop=diagonKoniec(graf, m);
         }
-
         return graf;
     }
 
-    public static boolean sprawdzDiagnozowalnosc(int num, int[][] graf, int m){
+    public static boolean sprawdzDiagnozowalnosc( int[][] graf, int m){
         int sum =0;
-        boolean diag = true;
-        for (int j = 0; j < num; j++) {
-            for (int i = 0; i < num; i++) {
+        for (int j = 0; j < graf.length; j++) {
+            for (int i = 0; i < graf.length; i++) {
                 if(i==j) continue; //Nie sprawdzamy skosów
                 sum=sum+graf[i][j];
             }
-            if(sum<m)diag=false;
+            if(sum<m)return false;
             sum=0;
         }
 
-        return diag;
+        return true;
+    }
+
+    public static boolean sprawdzDiagon(int[][] graf, int m,int j){
+        int sum =0;
+        for (int i = 0; i < graf.length; i++) {
+            if (i == j) continue; //Nie sprawdzamy skosów
+            sum = sum + graf[i][j];
+        }
+        if(sum>m)return true;
+        else return false;
+    }
+
+    public static boolean diagonKoniec( int[][] graf, int m){
+        int sum =0;
+        for (int j = 0; j < graf.length; j++) {
+            for (int i = 0; i < graf.length; i++) {
+                if(i==j) continue;
+                sum=sum+graf[i][j];
+            }
+            if(sum>m)return true;
+            sum=0;
+        }
+        return false;
     }
 
     public static boolean sprawdzWystarczajacy(int[][] graf, int m){
@@ -140,6 +163,28 @@ public class Main {
             }
         }
         return true;
+    }
+
+    public static int indeksMax( int[][] graf, int p){
+        int suma =0;
+        int temp_suma=0;
+        int temp_j=0;
+        for (int j = 0; j < graf.length; j++) {
+            for (int i = 0; i < graf.length; i++) {
+                if(i==j) continue; //Nie sprawdzamy skosów
+                suma=suma+graf[j][i];
+            }
+            if(suma>temp_suma){
+               temp_suma=suma;
+               temp_j=j;
+            }
+            /*
+            if((suma==temp_suma)&&(temp_j==p)){
+                temp_j=j;
+            }*/
+            suma=0;
+        }
+        return temp_j;
     }
 
     public static void wypiszTablice(int num, int[][] graf){
