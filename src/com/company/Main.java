@@ -58,49 +58,85 @@ public class Main {
 
             System.out.println("MACIERZ WEJŚCIOWA:");
             wypiszTablice(num,graf);
-            zredukowany = redukuj(graf,m);
 
+
+            zredukowany = redukuj(graf,m);
             System.out.println("\nMACIERZ OPTYMALNA:");
             wypiszTablice(num, zredukowany);
+
+            if(sprawdzWystarczajacy(zredukowany,m)){
+                System.out.println("Warunek wystarczający zoptymalizowanego grafu jest spełniony.");
+            }
+            if(sprawdzDiagnozowalnosc(zredukowany,m)){
+                System.out.println("Warunek konieczny zoptymalizowanego grafu jest spełniony.");}
+
         } catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    public static int[][] redukuj(int[][] graf, int m){
-        List<Integer> indeksy = new ArrayList<>();
-        int max_j=-1;
-        int k;
-        boolean petla;
-        boolean stop=diagonKoniec(graf, m);
+    public static List<Integer> ktoreZbadac(int[][] graf, int m){
+        int sum=0;
+        List<Integer> doZbadania = new ArrayList<>();
 
-        while(stop){
-            max_j=indeksMax(graf, max_j);
-            k=0;
-            petla=true;
-            while(petla){
-                //if(max_j==0)return graf;
-                if(graf[max_j][k]==1){
-                    if(sprawdzDiagon(graf,m,k)) {
-                        if(max_j==k)continue;
-                        graf[max_j][k]=0;
-                        indeksy.add(k);
-                        petla=false;
-                    }
-                    else k=k+1;
-                }
-                else k=k+1;
-                if(k>7)petla=false;
-            }
-            if(!sprawdzWystarczajacy(graf,m)){
-                for(Integer index : indeksy){
-                    graf[max_j][index]=1;
-                }
-                indeksy.clear();
-            }
-            stop=diagonKoniec(graf, m);
+        for(int i=0;i<graf.length;i++){ ///WYZEROWANIE DIAGONALII
+            graf[i][i]=0;
         }
+
+        for(int j=0;j<graf.length;j++) {    ///ZEBRANIE INFORMACJI O KOLUMNACH MOŻLIWYCH DO ZOPTYMALIZOWANIA
+            for (int i = 0; i < graf.length; i++) { //SPAWDZANIE KOLUMN CZY RÓWNE M
+                if(graf[i][j]==1) sum++;
+            }
+            if(sum>m) doZbadania.add(j);
+            sum=0;
+        }
+
+        return doZbadania;
+    }
+
+    public static int[][] redukuj(int[][] graf, int m){
+        int[][] wejsciowy = graf;
+
+        for(int k=0;k<graf.length;k++) {
+            List<Integer> x = ktoreZbadac(graf, m);
+            List<Integer> y = new ArrayList<>();
+            int wiersz = 0;
+
+            for (Integer zb : x) {
+                for (int i = 0; i < graf.length; i++) {
+                    if (graf[i][zb] == 1) {
+                        y.add(i);
+                    }
+                }
+
+                wiersz = wyznaczCiecie(graf, y);
+                y.clear();
+                graf[wiersz][zb] = 0;
+            }
+        }
+
         return graf;
+    }
+
+    public static Integer wyznaczCiecie(int[][] graf, List<Integer> y){
+        int max=0;
+        int maxIndeks=0;
+        int tempIndeks=0;
+        int sum=0;
+
+        for(Integer w : y){
+            for(int j=0;j<graf[w].length;j++){
+                //System.out.print(graf[w][j]);
+                if(graf[w][j]==1) sum++;
+                tempIndeks=w;
+            }
+            //System.out.println("");
+            if(max<sum){ max=sum; maxIndeks=tempIndeks; }
+            sum=0;
+        }
+        //System.out.println(maxIndeks);
+
+        return maxIndeks;
     }
 
     public static boolean sprawdzDiagnozowalnosc( int[][] graf, int m){
@@ -145,8 +181,6 @@ public class Main {
         for(int i=0;i<graf.length;i++){
             set.add(i);
         }
-
-        Set<Set<Integer>> comb= new HashSet<>();
         for(int p=0;p<m;p++){
             int licz=graf.length-2*m+p;
             int suma=0;
@@ -163,28 +197,6 @@ public class Main {
             }
         }
         return true;
-    }
-
-    public static int indeksMax( int[][] graf, int p){
-        int suma =0;
-        int temp_suma=0;
-        int temp_j=0;
-        for (int j = 0; j < graf.length; j++) {
-            for (int i = 0; i < graf.length; i++) {
-                if(i==j) continue; //Nie sprawdzamy skosów
-                suma=suma+graf[j][i];
-            }
-            if(suma>temp_suma){
-               temp_suma=suma;
-               temp_j=j;
-            }
-            /*
-            if((suma==temp_suma)&&(temp_j==p)){
-                temp_j=j;
-            }*/
-            suma=0;
-        }
-        return temp_j;
     }
 
     public static void wypiszTablice(int num, int[][] graf){
